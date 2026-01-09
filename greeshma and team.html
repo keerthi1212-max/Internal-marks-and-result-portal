@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Internal Marks & Results Portal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+  font-family: Arial, sans-serif;
+  background:#f4f6f8;
+  margin:0;
+  padding:0;
+  text-align:center;
+}
+header{
+  background:#1e40af;
+  color:white;
+  padding:15px;
+  font-size:22px;
+}
+.container{
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
+.card{
+  background:white;
+  padding:20px;
+  border-radius:8px;
+  margin-top:20px;
+}
+input,button{
+  padding:10px;
+  width:100%;
+  margin:8px 0;
+}
+button{
+  background:#2563eb;
+  color:white;
+  border:none;
+  cursor:pointer;
+}
+button:hover{
+  background:#1e3a8a;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:15px;
+}
+th,td{
+  border:1px solid #ccc;
+  padding:8px;
+}
+.hide{display:none;}
+.logout{
+  background:#dc2626;
+  margin-top:20px;
+}
+.success{color:green;}
+.error{color:red;}
+</style>
+</head>
+
+<body>
+
+<header>Internal Marks & Results Portal</header>
+
+<div class="container">
+
+<!-- LOGIN -->
+<div id="loginCard" class="card">
+  <h2>Login</h2>
+  <input type="email" id="email" placeholder="Email">
+  <input type="password" id="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+  <p id="loginMsg"></p>
+
+  <p><b>Demo Logins</b></p>
+  <p>Admin: admin@test.com / admin123</p>
+  <p>Faculty: faculty@test.com / faculty123</p>
+  <p>Student: student@test.com / student123</p>
+</div>
+
+<!-- ADMIN -->
+<div id="adminDash" class="card hide">
+  <h2>Admin Dashboard</h2>
+  <p>Manage users & subjects (Demo View)</p>
+  <ul>
+    <li>Admin</li>
+    <li>Faculty</li>
+    <li>Student</li>
+  </ul>
+  <button class="logout" onclick="logout()">Logout</button>
+</div>
+
+<!-- FACULTY -->
+<div id="facultyDash" class="card hide">
+  <h2>Faculty Dashboard</h2>
+
+  <table>
+    <tr>
+      <th>Test 1 (25)</th>
+      <th>Test 2 (25)</th>
+      <th>Assignment (30)</th>
+      <th>Attendance (20)</th>
+    </tr>
+    <tr>
+      <td><input type="number" id="t1"></td>
+      <td><input type="number" id="t2"></td>
+      <td><input type="number" id="asg"></td>
+      <td><input type="number" id="att"></td>
+    </tr>
+  </table>
+
+  <button onclick="saveMarks()">Save Marks</button>
+  <p id="facultyMsg"></p>
+
+  <button class="logout" onclick="logout()">Logout</button>
+</div>
+
+<!-- STUDENT -->
+<div id="studentDash" class="card hide">
+  <h2>Student Results</h2>
+
+  <table>
+    <tr>
+      <th>Subject</th>
+      <th>Total</th>
+      <th>Grade</th>
+    </tr>
+    <tbody id="resultTable"></tbody>
+  </table>
+
+  <button class="logout" onclick="logout()">Logout</button>
+</div>
+
+</div>
+
+<script>
+// ===== DUMMY DATA =====
+const users = [
+ {id:1,email:"admin@test.com",password:"admin123",role:"admin"},
+ {id:2,email:"faculty@test.com",password:"faculty123",role:"faculty"},
+ {id:3,email:"student@test.com",password:"student123",role:"student"}
+];
+
+// ===== LOGIN =====
+function login(){
+  const email=document.getElementById("email").value;
+  const password=document.getElementById("password").value;
+
+  const user=users.find(u=>u.email===email && u.password===password);
+  if(!user){
+    loginMsg.innerHTML="<span class='error'>Invalid Credentials</span>";
+    return;
+  }
+
+  localStorage.setItem("user",JSON.stringify(user));
+  showDashboard(user.role);
+}
+
+// ===== DASHBOARD CONTROL =====
+function showDashboard(role){
+  loginCard.classList.add("hide");
+  adminDash.classList.add("hide");
+  facultyDash.classList.add("hide");
+  studentDash.classList.add("hide");
+
+  if(role==="admin") adminDash.classList.remove("hide");
+  if(role==="faculty") facultyDash.classList.remove("hide");
+  if(role==="student") loadResults();
+}
+
+// ===== GRADE LOGIC =====
+function grade(total){
+  if(total>=90) return "A";
+  if(total>=80) return "B";
+  if(total>=70) return "C";
+  if(total>=60) return "D";
+  return "F";
+}
+
+// ===== SAVE MARKS =====
+function saveMarks(){
+  const t1=+document.getElementById("t1").value;
+  const t2=+document.getElementById("t2").value;
+  const asg=+document.getElementById("asg").value;
+  const att=+document.getElementById("att").value;
+
+  if(t1>25||t2>25||asg>30||att>20){
+    facultyMsg.innerHTML="<span class='error'>Invalid Marks</span>";
+    return;
+  }
+
+  const total=t1+t2+asg+att;
+  const g=grade(total);
+
+  const record={subject:"Maths",total:total,grade:g};
+  localStorage.setItem("marks",JSON.stringify(record));
+
+  facultyMsg.innerHTML="<span class='success'>Marks Saved Successfully</span>";
+}
+
+// ===== STUDENT VIEW =====
+function loadResults(){
+  studentDash.classList.remove("hide");
+  const m=JSON.parse(localStorage.getItem("marks"));
+  if(!m){
+    resultTable.innerHTML="<tr><td colspan='3'>No Results</td></tr>";
+    return;
+  }
+  resultTable.innerHTML=`
+    <tr>
+      <td>${m.subject}</td>
+      <td>${m.total}</td>
+      <td>${m.grade}</td>
+    </tr>`;
+}
+
+// ===== LOGOUT =====
+function logout(){
+  localStorage.clear();
+  location.reload();
+}
+
+// AUTO LOGIN CHECK
+const currentUser=JSON.parse(localStorage.getItem("user"));
+if(currentUser) showDashboard(currentUser.role);
+</script>
+
+</body>
+</html>
